@@ -17,7 +17,7 @@
   [{:keys [shape page-id file-id] :as props}]
   (let [exports  (mf/use-state (:exports shape []))
 
-        [on-download loading?] (we/use-download-export shape page-id file-id @exports)
+        [on-download loading?] (we/use-download-export (:id shape) page-id file-id "TODO" @exports)
 
         add-export
         (mf/use-callback

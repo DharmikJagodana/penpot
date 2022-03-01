@@ -22,33 +22,35 @@
 (def exports-attrs [:exports])
 
 (defn request-export
-  [shape exports]
+  [id page-id file-id name exports]
   ;; Force a persist before exporting otherwise the exported shape could be outdated
   (st/emit! ::dwp/force-persist)
   (rp/query!
    :export
-   {:page-id (:page-id shape)
-    :file-id  (:file-id shape)
-    :object-id (:id shape)
-    :name (:name shape)
+   {:page-id page-id
+    :file-id  file-id
+    :object-id id
+    :name name
     :exports exports}))
 
 (defn use-download-export
-  [shape page-id file-id exports]
+  [id page-id file-id name exports]
   (let [loading? (mf/use-state false)
+        
+        _ (println "kkkkkk")
 
-        filename (cond-> (:name shape)
+        filename (cond-> name
                    (and (= (count exports) 1)
                         (not (empty (:suffix (first exports)))))
                    (str (:suffix (first exports))))
 
         on-download-callback
         (mf/use-callback
-         (mf/deps filename shape exports)
+         (mf/deps filename id page-id file-id exports)
          (fn [event]
            (dom/prevent-default event)
            (swap! loading? not)
-           (->> (request-export (assoc shape :page-id page-id :file-id file-id) exports)
+           (->> (request-export id page-id file-id name exports)
                 (rx/subs
                  (fn [body]
                    (dom/trigger-download filename body))
@@ -64,21 +66,18 @@
   [{:keys [ids type values page-id file-id] :as props}]
   (let [exports  (:exports values [])
 
-        ;; TODO remove
         scale-enabled?
         (mf/use-callback
          (fn [export]
-           true))
+           (#{:png :jpeg} (:type export))))
 
-        loading? false
 
-        ;; scale-enabled?
-        ;; (mf/use-callback
-        ;;   (fn [export]
-        ;;     (#{:png :jpeg} (:type export))))
+        _ (println "xxxxxxxxxxxxxxxxxx" exports (not= exports :multiple) (> (count exports) 0))
 
-        ;; [on-download loading?] (use-download-export shape page-id file-id exports)
-
+        ;; TODO fix [on-download loading?]
+        [on-download loading?] (if (and (not= exports :multiple) (> (count exports) 0))
+                                 (use-download-export (get ids 0) page-id file-id "TODO "(get exports 0))
+                                 [nil false])
         add-export
         (mf/use-callback
          (mf/deps ids)
@@ -173,10 +172,10 @@
             i/minus]])
 
         [:div.btn-icon-dark.download-button
-         #_{:on-click (when-not loading? on-download)
-            :class (dom/classnames
-                    :btn-disabled loading?)
-            :disabled loading?}
+         {:on-click (when-not loading? on-download)
+          :class (dom/classnames
+                  :btn-disabled loading?)
+          :disabled loading?}
          (if loading?
            (tr "workspace.options.exporting-object")
            (tr "workspace.options.export-object"))]])]))
