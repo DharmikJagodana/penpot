@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.main.data.messages :as dm]
    [app.main.data.workspace :as udw]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -17,6 +18,8 @@
    [app.util.i18n :as i18n :refer  [tr]]
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
+
+(def exports-attrs [:exports])
 
 (defn request-export
   [shape exports]
@@ -57,71 +60,92 @@
     [on-download-callback @loading?]))
 
 (mf/defc exports-menu
-  [{:keys [shape page-id file-id] :as props}]
-  (let [exports  (:exports shape [])
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "page-id" "file-id"]))]}
+  [{:keys [ids type values page-id file-id] :as props}]
+  (let [exports  (:exports values [])
 
+        ;; TODO remove
         scale-enabled?
         (mf/use-callback
-          (fn [export]
-            (#{:png :jpeg} (:type export))))
+         (fn [export]
+           true))
 
-        [on-download loading?] (use-download-export shape page-id file-id exports)
+        loading? false
+
+        ;; scale-enabled?
+        ;; (mf/use-callback
+        ;;   (fn [export]
+        ;;     (#{:png :jpeg} (:type export))))
+
+        ;; [on-download loading?] (use-download-export shape page-id file-id exports)
 
         add-export
         (mf/use-callback
-         (mf/deps shape)
+         (mf/deps ids)
          (fn []
            (let [xspec {:type :png
                         :suffix ""
                         :scale 1}]
-             (st/emit! (udw/update-shape (:id shape)
-                                         {:exports (conj exports xspec)})))))
+             (st/emit! (dch/update-shapes ids
+                                          (fn [shape]
+                                            (assoc shape :exports (into [xspec] (:exports shape)))))))))
+
         delete-export
         (mf/use-callback
-         (mf/deps shape)
-         (fn [index]
-           (let [[before after] (split-at index exports)
-                 exports        (d/concat-vec before (rest after))]
-             (st/emit! (udw/update-shape (:id shape)
-                                         {:exports exports})))))
+         (mf/deps ids)
+         (fn [position]
+           (let [remove-fill-by-index (fn [values index] (->> (d/enumerate values)
+                                                              (filterv (fn [[idx _]] (not= idx index)))
+                                                              (mapv second)))
+
+                 remove (fn [shape] (update shape :exports remove-fill-by-index position))]
+             (st/emit! (dch/update-shapes
+                        ids
+                        #(remove %))))))
 
         on-scale-change
         (mf/use-callback
-         (mf/deps shape)
+         (mf/deps ids)
          (fn [index event]
            (let [target  (dom/get-target event)
                  value   (dom/get-value target)
-                 value   (d/parse-double value)
-                 exports (assoc-in exports [index :scale] value)]
-             (st/emit! (udw/update-shape (:id shape)
-                                         {:exports exports})))))
+                 value   (d/parse-double value)]
+             (st/emit! (dch/update-shapes ids
+                                          (fn [shape]
+                                            (assoc-in shape [:exports index :scale] value)))))))
 
         on-suffix-change
         (mf/use-callback
-         (mf/deps shape)
+         (mf/deps ids)
          (fn [index event]
            (let [target  (dom/get-target event)
-                 value   (dom/get-value target)
-                 exports (assoc-in exports [index :suffix] value)]
-             (st/emit! (udw/update-shape (:id shape)
-                                         {:exports exports})))))
+                 value   (dom/get-value target)]
+             (st/emit! (dch/update-shapes ids
+                                          (fn [shape]
+                                            (assoc-in shape [:exports index :suffix] value)))))))
 
         on-type-change
         (mf/use-callback
-         (mf/deps shape)
+         (mf/deps ids)
          (fn [index event]
            (let [target  (dom/get-target event)
                  value   (dom/get-value target)
-                 value   (keyword value)
-                 exports (assoc-in exports [index :type] value)]
-             (st/emit! (udw/update-shape (:id shape)
-                                         {:exports exports})))))]
+                 value   (keyword value)]
+             (st/emit! (dch/update-shapes ids
+                                          (fn [shape]
+                                            (assoc-in shape [:exports index :type] value)))))))]
 
     [:div.element-set.exports-options
      [:div.element-set-title
       [:span (tr "workspace.options.export")]
       [:div.add-page {:on-click add-export} i/close]]
-     (when (seq exports)
+
+
+     (cond
+       (= :multiple exports)
+       [:div "TODO"]
+
+       (seq exports)
        [:div.element-set-content
         (for [[index export] (d/enumerate exports)]
           [:div.element-set-options-group
@@ -149,10 +173,10 @@
             i/minus]])
 
         [:div.btn-icon-dark.download-button
-         {:on-click (when-not loading? on-download)
-          :class (dom/classnames
-                  :btn-disabled loading?)
-          :disabled loading?}
+         #_{:on-click (when-not loading? on-download)
+            :class (dom/classnames
+                    :btn-disabled loading?)
+            :disabled loading?}
          (if loading?
            (tr "workspace.options.exporting-object")
            (tr "workspace.options.export-object"))]])]))

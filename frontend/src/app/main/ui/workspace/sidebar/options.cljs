@@ -48,7 +48,9 @@
      :bool    [:& bool/options {:shape shape}]
      nil)
    [:& exports-menu
-    {:shape shape
+    {:ids [(:id shape)]
+     :values (select-keys shape [:exports])
+     :shape shape
      :page-id page-id
      :file-id file-id}]])
 
@@ -71,7 +73,9 @@
                               :file-id file-id
                               :shapes-with-children shapes-with-children}]
          [:& multiple/options {:shapes-with-children shapes-with-children
-                               :shapes shapes}])]]
+                               :shapes shapes
+                               :page-id page-id
+                               :file-id file-id}])]]
 
      [:& tab-element {:id :prototype
                       :title (tr "workspace.options.prototype")}
