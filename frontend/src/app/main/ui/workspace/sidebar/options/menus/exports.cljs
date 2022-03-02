@@ -16,7 +16,7 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer  [tr]]
+   [app.util.i18n :as i18n :refer  [tr, c]]
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
@@ -158,7 +158,7 @@
 
     [:div.element-set.exports-options
      [:div.element-set-title
-      [:span (tr "workspace.options.export")]
+      [:span (tr (if (> (count ids) 1) "workspace.options.export-multiple" "workspace.options.export"))]
       (when (not (= :multiple exports))
         [:div.add-page {:on-click add-export} i/close])]
 
@@ -205,5 +205,5 @@
           :disabled loading?}
          (if loading?
            (tr "workspace.options.exporting-object")
-           (tr "workspace.options.export-object"))]])]))
+           (tr "workspace.options.export-object" (c (count ids))))]])]))
 

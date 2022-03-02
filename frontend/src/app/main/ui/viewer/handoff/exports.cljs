@@ -10,7 +10,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.menus.exports :as we]
    [app.util.dom :as dom]
-   [app.util.i18n :refer [tr]]
+   [app.util.i18n :refer [tr, c]]
    [rumext.alpha :as mf]))
 
 (mf/defc exports
@@ -125,5 +125,5 @@
           :disabled loading?}
          (if loading?
            (tr "workspace.options.exporting-object")
-           (tr "workspace.options.export-object"))]])]))
+           (tr "workspace.options.export-object" (c (count shapes))))]])]))
 
