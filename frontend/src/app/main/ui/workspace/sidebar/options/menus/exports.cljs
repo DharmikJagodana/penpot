@@ -11,6 +11,7 @@
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.persistence :as dwp]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
@@ -19,47 +20,34 @@
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
+
 (def exports-attrs [:exports])
 
 (defn request-export
-  [id page-id file-id name exports]
+  [ids page-id file-id name exports]
   ;; Force a persist before exporting otherwise the exported shape could be outdated
-  (println "request-export" id page-id file-id name exports)
+  (println "request-export" ids page-id file-id name exports)
   (st/emit! ::dwp/force-persist)
   (rp/query!
    :export
    {:page-id page-id
     :file-id  file-id
-    :object-id id
+    ;; TODO fix this
+    :object-id (first ids)
     :name name
     :exports exports}))
 
 (defn use-download-export
-  [ids page-id file-id exports]
-  (let [id (get ids 0)
-        loading? (mf/use-state false)
-
-        name "TODO-1"
-
-        filename (cond
-                   (= exports :multiple)
-                   "TODO-21"
-
-                   (and (= (count exports) 1)
-                        (not (empty (:suffix (first exports)))))
-                   (str name (:suffix (first exports)))
-
-                   :else
-                   "TODO-22"
-                   )
+  [ids filename page-id file-id exports]
+  (let [loading? (mf/use-state false)
 
         on-download-callback
         (mf/use-callback
-         (mf/deps filename name id page-id file-id exports)
+         (mf/deps filename ids page-id file-id exports)
          (fn [event]
            (dom/prevent-default event)
            (swap! loading? not)
-           (->> (request-export id page-id file-id name exports)
+           (->> (request-export ids page-id file-id filename exports)
                 (rx/subs
                  (fn [body]
                    (dom/trigger-download filename body))
@@ -73,15 +61,36 @@
 (mf/defc exports-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "page-id" "file-id"]))]}
   [{:keys [ids type values page-id file-id] :as props}]
-  (let [_ (println "exports-menu" ids values)
-        exports  (:exports values [])
+  (let [exports  (:exports values [])
 
         scale-enabled?
         (mf/use-callback
          (fn [export]
            (#{:png :jpeg} (:type export))))
 
-        [on-download loading?] (use-download-export ids page-id file-id exports)
+        page (wsh/lookup-page @st/state page-id)
+        first-object-name (-> (:objects page)
+                              (get (first ids))
+                              :name)
+
+        filename (cond
+               ;; one export from one shape
+               (and (= (count ids) 1)
+                    (= (count exports) 1)
+                    (not (empty (:suffix (first exports)))))
+               (str
+                first-object-name
+                (:suffix (first exports)))
+
+               ;; multiple exports from one shape
+               (and (= (count ids) 1)
+                    (> (count exports) 1))
+               first-object-name
+
+               :else
+               (:name page))
+
+        [on-download loading?] (use-download-export ids filename page-id file-id exports)
 
         add-export
         (mf/use-callback
@@ -150,8 +159,8 @@
     [:div.element-set.exports-options
      [:div.element-set-title
       [:span (tr "workspace.options.export")]
-      [:div.add-page {:on-click add-export} i/close]]
-
+      (when (not (= :multiple exports))
+        [:div.add-page {:on-click add-export} i/close])]
 
      (cond
        (= :multiple exports)
