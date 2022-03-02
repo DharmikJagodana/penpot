@@ -35,20 +35,27 @@
     :exports exports}))
 
 (defn use-download-export
-  [id page-id file-id name exports]
-  (let [_ (println 11)
+  [ids page-id file-id exports]
+  (let [id (get ids 0)
         loading? (mf/use-state false)
-        _ (println 12)
-        filename (cond-> name
+
+        name "TODO-1"
+
+        filename (cond
+                   (= exports :multiple)
+                   "TODO-21"
+
                    (and (= (count exports) 1)
                         (not (empty (:suffix (first exports)))))
-                   (str (:suffix (first exports))))
-        
-        _ (println 13)
+                   (str name (:suffix (first exports)))
+
+                   :else
+                   "TODO-22"
+                   )
 
         on-download-callback
         (mf/use-callback
-         (mf/deps filename id page-id file-id exports)
+         (mf/deps filename name id page-id file-id exports)
          (fn [event]
            (dom/prevent-default event)
            (swap! loading? not)
@@ -66,17 +73,15 @@
 (mf/defc exports-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "page-id" "file-id"]))]}
   [{:keys [ids type values page-id file-id] :as props}]
-  (let [exports  (:exports values [])
+  (let [_ (println "exports-menu" ids values)
+        exports  (:exports values [])
 
         scale-enabled?
         (mf/use-callback
          (fn [export]
            (#{:png :jpeg} (:type export))))
 
-        ;; TODO fix [on-download loading?]
-        [on-download loading?] (if (and (not= exports :multiple) (> (count exports) 0))
-                                 (use-download-export (get ids 0) page-id file-id "TODO" exports)
-                                 [nil false])
+        [on-download loading?] (use-download-export ids page-id file-id exports)
 
         add-export
         (mf/use-callback
