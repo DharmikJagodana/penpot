@@ -24,6 +24,7 @@
 (defn request-export
   [id page-id file-id name exports]
   ;; Force a persist before exporting otherwise the exported shape could be outdated
+  (println "request-export" id page-id file-id name exports)
   (st/emit! ::dwp/force-persist)
   (rp/query!
    :export
@@ -35,14 +36,15 @@
 
 (defn use-download-export
   [id page-id file-id name exports]
-  (let [loading? (mf/use-state false)
-        
-        _ (println "kkkkkk")
-
+  (let [_ (println 11)
+        loading? (mf/use-state false)
+        _ (println 12)
         filename (cond-> name
                    (and (= (count exports) 1)
                         (not (empty (:suffix (first exports)))))
                    (str (:suffix (first exports))))
+        
+        _ (println 13)
 
         on-download-callback
         (mf/use-callback
@@ -71,13 +73,11 @@
          (fn [export]
            (#{:png :jpeg} (:type export))))
 
-
-        _ (println "xxxxxxxxxxxxxxxxxx" exports (not= exports :multiple) (> (count exports) 0))
-
         ;; TODO fix [on-download loading?]
         [on-download loading?] (if (and (not= exports :multiple) (> (count exports) 0))
-                                 (use-download-export (get ids 0) page-id file-id "TODO "(get exports 0))
+                                 (use-download-export (get ids 0) page-id file-id "TODO" exports)
                                  [nil false])
+
         add-export
         (mf/use-callback
          (mf/deps ids)
@@ -132,7 +132,15 @@
                  value   (keyword value)]
              (st/emit! (dch/update-shapes ids
                                           (fn [shape]
-                                            (assoc-in shape [:exports index :type] value)))))))]
+                                            (assoc-in shape [:exports index :type] value)))))))
+
+        on-remove-all
+        (mf/use-callback
+         (mf/deps ids)
+         (fn []
+           (st/emit! (dch/update-shapes ids
+                                        (fn [shape]
+                                          (assoc shape :exports []))))))]
 
     [:div.element-set.exports-options
      [:div.element-set-title
@@ -142,7 +150,12 @@
 
      (cond
        (= :multiple exports)
-       [:div "TODO"]
+       [:div.element-set-options-group
+        [:div.element-set-label (tr "settings.multiple")]
+        [:div.element-set-actions
+         [:div.element-set-actions-button {:on-click on-remove-all}
+          i/minus]]]
+
 
        (seq exports)
        [:div.element-set-content
