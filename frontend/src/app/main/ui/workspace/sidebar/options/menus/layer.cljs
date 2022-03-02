@@ -23,8 +23,7 @@
     ""
     (str (-> opacity
              (d/coalesce 1)
-             (* 100)
-             (mth/round)))))
+             (* 100)))))
 
 (defn select-all [event]
   (dom/select-text! (dom/get-target event)))

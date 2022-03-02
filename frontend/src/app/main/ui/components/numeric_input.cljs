@@ -6,8 +6,9 @@
 
 (ns app.main.ui.components.numeric-input
   (:require
+   [app.main.ui.formats :as fmt]
    [app.common.data :as d]
-   [app.common.math :as math]
+   [app.common.math :as mth]
    [app.common.spec :as us]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -21,8 +22,8 @@
 
 (defn num? [val]
   (and (number? val)
-       (not (math/nan? val))
-       (math/finite? val)))
+       (not (mth/nan? val))
+       (mth/finite? val)))
 
 (mf/defc numeric-input
   {::mf/wrap-props false
@@ -85,9 +86,9 @@
                                 (sm/expr-eval value))]
               (when (num? new-value)
                 (-> new-value
-                    (cond-> (number? precision)
+                    #_(cond-> (number? precision)
                       (math/precision precision))
-                    (cond-> (nil? precision)
+                    #_(cond-> (nil? precision)
                       (math/round))
                     (cljs.core/max us/min-safe-int)
                     (cljs.core/min us/max-safe-int)
@@ -103,9 +104,7 @@
           (mf/deps ref)
           (fn [new-value]
             (let [input-node (mf/ref-val ref)]
-              (dom/set-value! input-node (if (some? precision)
-                                           (ust/format-precision new-value precision)
-                                           (str new-value))))))
+              (dom/set-value! input-node (fmt/format-number new-value)))))
 
         apply-value
         (mf/use-callback
@@ -193,17 +192,17 @@
                   (obj/set! "className" "input-text")
                   (obj/set! "type" "text")
                   (obj/set! "ref" ref)
-                  (obj/set! "defaultValue" value-str)
+                  (obj/set! "defaultValue" (fmt/format-number value))
                   (obj/set! "title" title)
                   (obj/set! "onWheel" handle-mouse-wheel)
                   (obj/set! "onKeyDown" handle-key-down)
                   (obj/set! "onBlur" handle-blur))]
 
     (mf/use-effect
-     (mf/deps value-str)
+     (mf/deps value)
      (fn []
        (when-let [input-node (mf/ref-val ref)]
-         (dom/set-value! input-node value-str))))
+         (dom/set-value! input-node (fmt/format-number value)))))
 
     (mf/use-effect
      (mf/deps handle-blur)

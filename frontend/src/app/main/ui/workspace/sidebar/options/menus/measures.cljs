@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.common.math :as math]
+   [app.common.math :as mth]
    [app.common.spec.radius :as ctr]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dch]
@@ -46,9 +46,7 @@
   (let [value (attr values)]
     (if (= value :multiple)
       ""
-      (str (-> value
-               (d/coalesce 0)
-               (math/precision 2))))))
+      (str (-> value (d/coalesce 0))))))
 
 (declare +size-presets+)
 
@@ -230,7 +228,7 @@
          [:div.row-flex
           [:span.element-set-subtitle (tr "workspace.options.size")]
           [:div.input-element.width {:title (tr "workspace.options.width")}
-           [:> numeric-input {:min 1
+           [:> numeric-input {:min 0.01
                               :no-validate true
                               :placeholder "--"
                               :on-click select-all
@@ -238,7 +236,7 @@
                               :value (attr->string :width values)}]]
 
           [:div.input-element.height {:title (tr "workspace.options.height")}
-           [:> numeric-input {:min 1
+           [:> numeric-input {:min 0.01
                               :no-validate true
                               :placeholder "--"
                               :on-click select-all

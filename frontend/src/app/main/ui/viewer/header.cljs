@@ -6,6 +6,7 @@
 
 (ns app.main.ui.viewer.header
   (:require
+   [app.main.ui.formats :as fmt]
    [app.common.math :as mth]
    [app.main.data.modal :as modal]
    [app.main.data.viewer :as dv]
@@ -32,7 +33,7 @@
     :as props}]
   (let [show-dropdown? (mf/use-state false)]
     [:div.zoom-widget {:on-click #(reset! show-dropdown? true)}
-     [:span.label {} (str (mth/round (* 100 zoom)) "%")]
+     [:span.label (fmt/format-percent zoom)]
      [:span.icon i/arrow-down]
      [:& dropdown {:show @show-dropdown?
                    :on-close #(reset! show-dropdown? false)}
@@ -43,7 +44,7 @@
                                (dom/stop-propagation event)
                                (dom/prevent-default event)
                                (on-decrease))} "-"]
-         [:p.zoom-size {} (str (mth/round (* 100 zoom)) "%")]
+         [:p.zoom-size (fmt/format-percent zoom)]
          [:button {:on-click (fn [event]
                                (dom/stop-propagation event)
                                (dom/prevent-default event)

@@ -54,7 +54,7 @@
                     (get sr2 (if (= :x coord) :x1 :y1)))
 
         distance (- to-c from-c)
-        distance-str (-> distance (mth/precision 0) str)
+        distance-str (str distance)
         half-point (half-point coord sr1 sr2)
         width (-> distance-str
                   count
@@ -81,7 +81,7 @@
                 :font-size (/ pill-text-font-size zoom)
                 :fill "var(--color-white)"
                 :text-anchor "middle"}
-         (mth/precision distance 0)]])
+         distance]])
 
      (let [p1 [(+ from-c (/ segment-gap zoom)) (+ half-point (/ segment-gap-side zoom))]
            p2 [(+ from-c (/ segment-gap zoom)) (- half-point (/ segment-gap-side zoom))]
@@ -110,7 +110,7 @@
         sr2 (:selrect sh2)
         c1 (if (= coord :x) :x1 :y1)
         c2 (if (= coord :x) :x2 :y2)
-        dist (mth/precision (- (c1 sr2) (c2 sr1)) 0)]
+        dist (- (c1 sr2) (c2 sr1))]
     [dist [sh1 sh2]]))
 
 (defn overlap? [coord sh1 sh2]
@@ -134,8 +134,7 @@
             (-> (if (<= (coord sr) (coord selrect))
                   (gsh/distance-selrect sr selrect)
                   (gsh/distance-selrect selrect sr))
-                coord
-                (mth/precision 0))))
+                coord)))
 
         get-shapes-match
         (fn [pred? shapes]

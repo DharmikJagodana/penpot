@@ -67,7 +67,7 @@
            stroke-alignment (or stroke-alignment :center)]
        [:div.attributes-stroke-row
         [:div.attributes-label (t locale "handoff.attributes.stroke.width")]
-        [:div.attributes-value (mth/precision (:stroke-width shape) 2) "px"]
+        [:div.attributes-value (:stroke-width shape) "px"]
         [:div.attributes-value (->> stroke-style d/name (str "handoff.attributes.stroke.style.") (t locale))]
         [:div.attributes-label (->> stroke-alignment d/name (str "handoff.attributes.stroke.alignment.") (t locale))]
         [:& copy-button {:data (copy-stroke-data shape)}]])]))

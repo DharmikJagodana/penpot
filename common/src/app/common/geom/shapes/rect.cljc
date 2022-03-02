@@ -130,10 +130,3 @@
        (>= (:y1 sr2) (:y1 sr1))
        (<= (:y2 sr2) (:y2 sr1))))
 
-(defn round-selrect
-  [selrect]
-  (-> selrect
-      (update :x mth/round)
-      (update :y mth/round)
-      (update :width mth/round)
-      (update :height mth/round)))

@@ -115,7 +115,7 @@
 
 (defn precision
   [v n]
-  (when (and (number? v) (number? n))
+  (when (and (number? v) (integer? n))
     (let [d (pow 10 n)]
       (/ (round (* v d)) d))))
 

@@ -109,7 +109,7 @@
                    (every? #(or (nil? %) (= % 0)) value)
                    (or (nil? value) (= value 0))))
 
-         default-format (fn [value] (str (mth/precision value 2) "px"))
+         default-format (fn [value] (str value "px"))
          format-property (fn [prop]
                            (let [css-prop (or (prop to-prop) (name prop))
                                  format-fn (or (prop format) default-format)

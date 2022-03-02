@@ -249,8 +249,8 @@
 
         ;; This rectangle is the new data for the current rectangle. We want to change our rectangle
         ;; to have this width, height, x, y
-        new-width  (max 1 (:width points-temp-dim))
-        new-height (max 1 (:height points-temp-dim))
+        new-width  (max 0.01 (:width points-temp-dim))
+        new-height (max 0.01 (:height points-temp-dim))
         selrect    (gco/make-centered-selrect center new-width new-height)
 
         rect-points  (gpr/rect->points selrect)
@@ -276,8 +276,8 @@
           [(gpr/points->selrect points) nil nil]
           (adjust-rotated-transform shape points))
 
-        selrect (cond-> selrect
-                  round-coords? gpr/round-selrect)
+        ;;selrect (cond-> selrect
+        ;;          round-coords? gpr/round-selrect)
 
         ;; Redondear los points?
         base-rotation  (or (:rotation shape) 0)
@@ -512,7 +512,6 @@
                                             (d/parse-double)
                                             (* (get-in modifiers [:resize-vector :x] 1))
                                             (* (get-in modifiers [:resize-vector-2 :x] 1))
-                                            (mth/precision 2)
                                             (str))]
                           (attrs/merge attrs {:font-size font-size})))]
       (update shape :content #(txt/transform-nodes

@@ -102,7 +102,6 @@
                                   (+ start-pos delta))
 
                    ;; TODO: Change when pixel-grid flag exists
-                   new-position (mth/round new-position)
                    new-frame-id (:id (get-hover-frame))]
                (swap! state assoc
                       :new-position new-position
@@ -366,7 +365,7 @@
                     :style {:font-size (/ rules/font-size zoom)
                             :font-family rules/font-family
                             :fill colors/black}}
-             (str (mth/round pos))]]))])))
+             (str pos)]]))])))
 
 (mf/defc new-guide-area
   [{:keys [vbox zoom axis get-hover-frame disabled-guides?]}]
