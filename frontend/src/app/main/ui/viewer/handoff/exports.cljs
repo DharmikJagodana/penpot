@@ -35,7 +35,7 @@
                    :else
                    "TODO")
 
-        [on-download loading?] (we/use-download-export (mapv :id shapes) filename page-id file-id @exports)
+        [on-download loading?] (we/use-download-export shapes filename page-id file-id @exports)
 
         add-export
         (mf/use-callback

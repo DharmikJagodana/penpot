@@ -304,6 +304,14 @@ msgstr "Include shared library assets in file libraries"
 msgid "dashboard.export.title"
 msgstr "Export files"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Export selection"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "dashboard.export-shapes.selected"
+msgstr "%s de %s elements selected"
+
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Font deleted"
 

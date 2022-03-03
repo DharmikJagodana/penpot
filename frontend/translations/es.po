@@ -308,6 +308,14 @@ msgstr "Incluir librerias compartidas dentro de las librerias del fichero"
 msgid "dashboard.export.title"
 msgstr "Exportar ficheros"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Exportar selección"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "dashboard.export-shapes.selected"
+msgstr "%s de %s elementos seleccionados"
+
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Fuente eliminada."
 

@@ -8,10 +8,11 @@
   (:require
    [app.common.data :as d]
    [app.main.data.messages :as dm]
-   [app.main.data.workspace :as udw]
+   [app.main.data.modal :as modal]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
@@ -24,39 +25,141 @@
 (def exports-attrs [:exports])
 
 (defn request-export
-  [ids page-id file-id name exports]
+  [object-id page-id file-id name exports]
   ;; Force a persist before exporting otherwise the exported shape could be outdated
-  (println "request-export" ids page-id file-id name exports)
   (st/emit! ::dwp/force-persist)
   (rp/query!
    :export
    {:page-id page-id
     :file-id  file-id
-    ;; TODO fix this
-    :object-id (first ids)
+    :object-id object-id
     :name name
     :exports exports}))
 
 (defn use-download-export
-  [ids filename page-id file-id exports]
+  [shapes filename page-id file-id exports]
   (let [loading? (mf/use-state false)
 
         on-download-callback
         (mf/use-callback
-         (mf/deps filename ids page-id file-id exports)
+         (mf/deps filename shapes page-id file-id exports)
+         (if (= (count shapes) 1)
+           (fn [event]
+             (dom/prevent-default event)
+             (swap! loading? not)
+             (->> (request-export (:id (first shapes)) page-id file-id filename exports)
+                  (rx/subs
+                   (fn [body]
+                     (dom/trigger-download filename body))
+                   (fn [_error]
+                     (swap! loading? not)
+                     (st/emit! (dm/error (tr "errors.unexpected-error"))))
+                   (fn []
+                     (swap! loading? not)))))
+
+           (fn [event]
+             (dom/prevent-default event)
+             (st/emit!
+              (modal/show
+               {:type :export-shapes
+                :shapes shapes})))))]
+
+    [on-download-callback @loading?]))
+
+(defn use-download-export-by-id
+  [ids filename page-id file-id exports]
+  (let [objects (deref (refs/objects-by-id ids))]
+    (use-download-export objects filename page-id file-id exports)))
+
+(mf/defc export-shapes-dialog
+  {::mf/register modal/components
+   ::mf/register-as :export-shapes}
+  [{:keys [shapes]}]
+  (let [exports (mf/use-state (mapv (fn [shape] (assoc shape :exports (mapv #(assoc % :enabled true) (:exports shape)))) shapes))
+        checked (->> (map :exports @exports)
+                     (flatten)
+                     (filter #(get % :enabled)))
+
+        all (->> (map :exports @exports)
+                 (flatten))
+
+        all-checked? (->> all
+                          (every? #(get % :enabled)))
+
+        cancel-fn
+        (mf/use-callback
          (fn [event]
            (dom/prevent-default event)
-           (swap! loading? not)
-           (->> (request-export ids page-id file-id filename exports)
-                (rx/subs
-                 (fn [body]
-                   (dom/trigger-download filename body))
-                 (fn [_error]
-                   (swap! loading? not)
-                   (st/emit! (dm/error (tr "errors.unexpected-error"))))
-                 (fn []
-                   (swap! loading? not))))))]
-    [on-download-callback @loading?]))
+           (println "KO")
+           (st/emit! (modal/hide))))
+
+        accept-fn
+        (mf/use-callback
+         (mf/deps @exports)
+         (fn [event]
+           (dom/prevent-default event)
+           (println "OK" (->> (map :exports @exports)
+                              (flatten)
+                              (filter #(get % :enabled))))
+           ;; TODO: filtrar los enabled y llamar donde sea necesario
+           ))
+
+        on-change-handler
+        (fn [_ shape-index export-index]
+          (swap! exports update-in [shape-index :exports export-index :enabled] not))
+
+        change-all
+        (fn [_]
+          (reset! exports (mapv (fn [shape] (assoc shape :exports (mapv #(assoc % :enabled (not all-checked?)) (:exports shape)))) shapes)))]
+
+    [:div.modal-overlay
+     [:div.modal-container.export-shapes-dialog
+      [:div.modal-header
+       [:div.modal-header-title
+        [:h2 (tr "dashboard.export-shapes.title")]]
+
+       [:div.modal-close-button
+        {:on-click cancel-fn} i/close]]
+
+      [:*
+       [:div.modal-content
+        #_[:p.explain (tr "dashboard.export.explain")]
+        #_[:p.detail (tr "dashboard.export.detail")]
+        [:div.input-checkbox
+         [:input {:type "checkbox"
+                  :id (str "export-all")
+                  :checked all-checked?
+                  :on-change change-all}]
+         [:label {:for (str "export-all")}
+          (tr "dashboard.export-shapes.selected" (c (count checked)) (c (count all)))]]
+
+        (for [[shape-index shape] (d/enumerate shapes)]
+          (for [[export-index export] (d/enumerate (:exports shape))]
+            [:div.export-option.table-row
+             [:div.input-checkbox.table-field.check
+             ;;[:label.option-container
+              [:input {:type "checkbox"
+                       :id (str "export-" shape-index "-" export-index)
+                       :checked (get-in @exports [shape-index :exports export-index :enabled])
+                       :on-change #(on-change-handler % shape-index export-index)}]
+              [:label {:for (str "export-" shape-index "-" export-index)}]]
+             [:div.table-field.name (str (:name shape) "@" (:scale export) "x ")]
+             [:div.table-field.scale (str (:width shape) "x" (:height shape) "px ")]
+             [:div.table-field.suffix (:suffix export)]
+             [:div.table-field.extension (name (:type export))]]))]
+
+        [:div.modal-footer
+         [:div.action-buttons
+          [:input.cancel-button
+           {:type "button"
+            :value (tr "labels.cancel")
+            :on-click cancel-fn}]
+
+          [:input.accept-button
+           {:class "primary"
+            :type "button"
+            :value (tr "labels.export")
+            :on-click accept-fn}]]]]]]))
 
 (mf/defc exports-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "page-id" "file-id"]))]}
@@ -74,23 +177,23 @@
                               :name)
 
         filename (cond
-               ;; one export from one shape
-               (and (= (count ids) 1)
-                    (= (count exports) 1)
-                    (not (empty (:suffix (first exports)))))
-               (str
-                first-object-name
-                (:suffix (first exports)))
+                   ;; one export from one shape
+                   (and (= (count ids) 1)
+                        (= (count exports) 1)
+                        (not (empty (:suffix (first exports)))))
+                   (str
+                    first-object-name
+                    (:suffix (first exports)))
 
-               ;; multiple exports from one shape
-               (and (= (count ids) 1)
-                    (> (count exports) 1))
-               first-object-name
+                   ;; multiple exports from one shape
+                   (and (= (count ids) 1)
+                        (> (count exports) 1))
+                   first-object-name
 
-               :else
-               (:name page))
+                   :else
+                   (:name page))
 
-        [on-download loading?] (use-download-export ids filename page-id file-id exports)
+        [on-download loading?] (use-download-export-by-id ids filename page-id file-id exports)
 
         add-export
         (mf/use-callback
