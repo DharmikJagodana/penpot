@@ -134,27 +134,31 @@
 
       [:*
        [:div.modal-content
-        [:div.export-option.table-row.header
-         [:div.table-field.check {:on-click change-all}
-          (cond
-            all-checked? [:span i/checkbox-checked]
-            all-unchecked? [:span i/checkbox-unchecked]
-            :else [:span i/checkbox-intermediate])]
-         [:div.table-field.title (tr "dashboard.export-shapes.selected" (c (count checked)) (c (count all)))]]
+        (if (> (count all) 0)
+          [:*
+           [:div.export-option.table-row.header
+            [:div.table-field.check {:on-click change-all}
+             (cond
+               all-checked? [:span i/checkbox-checked]
+               all-unchecked? [:span i/checkbox-unchecked]
+               :else [:span i/checkbox-intermediate])]
+            [:div.table-field.title (tr "dashboard.export-shapes.selected" (c (count checked)) (c (count all)))]]
 
-        [:div.body
-         (for [[shape-index shape] (d/enumerate shapes)]
-           (for [[export-index export] (d/enumerate (:exports shape))]
-             [:div.export-option.table-row.body
-              [:div.table-field.check {:on-click #(on-change-handler % shape-index export-index)}
-               (if (get-in @exports [shape-index :exports export-index :enabled])
-                 [:span i/checkbox-checked]
-                 [:span i/checkbox-unchecked])]
+           [:div.body
+            (for [[shape-index shape] (d/enumerate shapes)]
+              (for [[export-index export] (d/enumerate (:exports shape))]
+                [:div.export-option.table-row.body
+                 [:div.table-field.check {:on-click #(on-change-handler % shape-index export-index)}
+                  (if (get-in @exports [shape-index :exports export-index :enabled])
+                    [:span i/checkbox-checked]
+                    [:span i/checkbox-unchecked])]
 
-              [:div.table-field.name (str (cond-> (:name shape)
-                                            (:suffix export) (str (:suffix export))))]
-              [:div.table-field.scale (str (* (:width shape) (:scale export)) "x" (* (:height shape) (:scale export)) "px ")]
-              [:div.table-field.extension (-> (name (:type export)) clojure.string/upper-case)]]))]]
+                 [:div.table-field.name (str (cond-> (:name shape)
+                                               (:suffix export) (str (:suffix export))))]
+                 [:div.table-field.scale (str (* (:width shape) (:scale export)) "x" (* (:height shape) (:scale export)) "px ")]
+                 [:div.table-field.extension (-> (name (:type export)) clojure.string/upper-case)]]))]])
+
+        [:div "TODO: maquetar esto para cuando no hay selección"]]
 
        [:div.modal-footer
         [:div.action-buttons
