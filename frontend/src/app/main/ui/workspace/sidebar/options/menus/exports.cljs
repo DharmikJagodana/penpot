@@ -86,6 +86,9 @@
         all-checked? (->> all
                           (every? #(get % :enabled)))
 
+        all-unchecked? (->> all
+                            (every? #(not (get % :enabled))))
+
         cancel-fn
         (mf/use-callback
          (fn [event]
@@ -121,43 +124,41 @@
        [:div.modal-close-button
         {:on-click cancel-fn} i/close]]
 
+      [:div.export-option.table-row.header
+       [:div.table-field.check {:on-click change-all}
+        (cond
+          all-checked? [:span i/checkbox-checked]
+          all-unchecked? [:span i/checkbox-unchecked]
+          :else [:span i/checkbox-intermediate])]
+       [:div.table-field.title (tr "dashboard.export-shapes.selected" (c (count checked)) (c (count all)))]]
+
       [:*
        [:div.modal-content
-        [:div.input-checkbox
-         [:input {:type "checkbox"
-                  :id (str "export-all")
-                  :checked all-checked?
-                  :on-change change-all}]
-         [:label {:for (str "export-all")}
-          (tr "dashboard.export-shapes.selected" (c (count checked)) (c (count all)))]]
-
         (for [[shape-index shape] (d/enumerate shapes)]
           (for [[export-index export] (d/enumerate (:exports shape))]
             [:div.export-option.table-row
-             [:div.input-checkbox.table-field.check
-             ;;[:label.option-container
-              [:input {:type "checkbox"
-                       :id (str "export-" shape-index "-" export-index)
-                       :checked (get-in @exports [shape-index :exports export-index :enabled])
-                       :on-change #(on-change-handler % shape-index export-index)}]
-              [:label {:for (str "export-" shape-index "-" export-index)}]]
-             [:div.table-field.name (str (:name shape) "@" (:scale export) "x ")]
-             [:div.table-field.scale (str (:width shape) "x" (:height shape) "px ")]
-             [:div.table-field.suffix (:suffix export)]
-             [:div.table-field.extension (name (:type export))]]))]
+             [:div.table-field.check {:on-click #(on-change-handler % shape-index export-index)}
+              (if (get-in @exports [shape-index :exports export-index :enabled])
+                [:span i/checkbox-checked]
+                [:span i/checkbox-unchecked])]
 
-        [:div.modal-footer
-         [:div.action-buttons
-          [:input.cancel-button
-           {:type "button"
-            :value (tr "labels.cancel")
-            :on-click cancel-fn}]
+             [:div.table-field.name (str (cond-> (:name shape)
+                                           (:suffix export) (str (:suffix export))))]
+             [:div.table-field.scale (str (* (:width shape) (:scale export)) "x" (* (:height shape) (:scale export)) "px ")]
+             [:div.table-field.extension (-> (name (:type export)) clojure.string/upper-case)]]))]
 
-          [:input.accept-button
-           {:class "primary"
-            :type "button"
-            :value (tr "labels.export")
-            :on-click accept-fn}]]]]]]))
+       [:div.modal-footer
+        [:div.action-buttons
+         [:input.cancel-button
+          {:type "button"
+           :value (tr "labels.cancel")
+           :on-click cancel-fn}]
+
+         [:input.accept-button
+          {:class "primary"
+           :type "button"
+           :value (tr "labels.export")
+           :on-click accept-fn}]]]]]]))
 
 (mf/defc exports-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "page-id" "file-id"]))]}

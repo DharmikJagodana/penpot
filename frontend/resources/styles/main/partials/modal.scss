@@ -1330,39 +1330,72 @@
 }
 
 .export-shapes-dialog {
+  .modal-content {
+    padding: 0;
+  }
   .export-option {
-    border-top: 1px solid $color-gray-10;
-    margin-bottom: 0.5rem;
-
     &.table-row {
       align-items: center;
       display: flex;
       flex-wrap: wrap;
-      height: 45px;
+      height: 48px;
       justify-content: space-between;
-      padding: 0px 0px;
+      padding: 0 2rem;
       width: 100%;
+
+      &.header {
+        height: 32px;
+
+        .table-field {
+          margin: 0;
+        }
+      }
+
+      &:not(:first-child) {
+        border-top: 1px solid $color-gray-10;
+      }
     }
 
     .table-field {
       flex-grow: 0;
+      margin: 10px 0;
       padding: 0px 4px;
       overflow: hidden;
       text-overflow: ellipsis;
       width: 50px;
 
       &.check {
+        cursor: pointer;
+        height: 18px;
+        padding: 0;
         width: 30px;
+        svg {
+          background-color: $color-primary;
+          fill: $color-white;
+        }
       }
 
-      &.scale {
+      &.title {
         flex-grow: 1;
-        width: 15%;
+        font-size: $fs12;
+        color: $color-black;
       }
 
       &.name {
         flex-grow: 1;
-        width: 30%;
+        font-size: $fs16;
+        color: $color-black;
+        width: 50%;
+      }
+
+      &.scale {
+        width: 25%;
+      }
+
+      &.scale,
+      &.extension {
+        color: $color-gray-30;
+        font-size: $fs12;
       }
     }
   }
