@@ -272,7 +272,7 @@
          [:li {:on-click on-add-shared}
           [:span (tr "dashboard.add-shared")]])
        [:li.export-file {:on-click on-export-shapes}
-        [:span (tr "dashboard.export-TODO")]
+        [:span (tr "dashboard.export-shapes")]
         [:span.shortcut (sc/get-tooltip :export-shapes)]]
        [:li.export-file {:on-click on-export-file}
         [:span (tr "dashboard.export-single")]]

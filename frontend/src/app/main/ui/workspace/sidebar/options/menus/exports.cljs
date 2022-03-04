@@ -156,9 +156,9 @@
                  [:div.table-field.name (str (cond-> (:name shape)
                                                (:suffix export) (str (:suffix export))))]
                  [:div.table-field.scale (str (* (:width shape) (:scale export)) "x" (* (:height shape) (:scale export)) "px ")]
-                 [:div.table-field.extension (-> (name (:type export)) clojure.string/upper-case)]]))]])
+                 [:div.table-field.extension (-> (name (:type export)) clojure.string/upper-case)]]))]]
 
-        [:div "TODO: maquetar esto para cuando no hay selección"]]
+          [:div "TODO: maquetar esto para cuando no hay selección"])]
 
        [:div.modal-footer
         [:div.action-buttons

@@ -264,6 +264,10 @@ msgstr ""
 "¡Oh, no! ¡Aún no tienes archivos! Si quieres probar con alguna plantilla ve a "
 "[Bibliotecas y plantillas](https://penpot.app/libraries-templates.html)"
 
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Exportar"
+
 msgid "dashboard.export-frames"
 msgstr "Exportar tableros a PDF..."
 

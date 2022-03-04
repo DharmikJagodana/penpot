@@ -260,6 +260,10 @@ msgstr ""
 "Oh no! You have no files yet! If you want to try with some templates go "
 "to [Libraries & templates](https://penpot.app/libraries-templates.html)"
 
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Exportar"
+
 msgid "dashboard.export-frames"
 msgstr "Export artboards to PDF..."
 
