@@ -156,22 +156,22 @@
                  [:div.table-field.name (str (cond-> (:name shape)
                                                (:suffix export) (str (:suffix export))))]
                  [:div.table-field.scale (str (* (:width shape) (:scale export)) "x" (* (:height shape) (:scale export)) "px ")]
-                 [:div.table-field.extension (-> (name (:type export)) clojure.string/upper-case)]]))]]
+                 [:div.table-field.extension (-> (name (:type export)) clojure.string/upper-case)]]))]
 
-          [:div "TODO: maquetar esto para cuando no hay selección"])]
+           [:div.modal-footer
+            [:div.action-buttons
+             [:input.cancel-button
+              {:type "button"
+               :value (tr "labels.cancel")
+               :on-click cancel-fn}]
 
-       [:div.modal-footer
-        [:div.action-buttons
-         [:input.cancel-button
-          {:type "button"
-           :value (tr "labels.cancel")
-           :on-click cancel-fn}]
+             [:input.accept-button
+              {:class "primary"
+               :type "button"
+               :value (tr "labels.export")
+               :on-click accept-fn}]]]]
 
-         [:input.accept-button
-          {:class "primary"
-           :type "button"
-           :value (tr "labels.export")
-           :on-click accept-fn}]]]]]]))
+          [:div "TODO: maquetar esto para cuando no hay selección"])]]]]))
 
 (mf/defc exports-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "page-id" "file-id"]))]}
