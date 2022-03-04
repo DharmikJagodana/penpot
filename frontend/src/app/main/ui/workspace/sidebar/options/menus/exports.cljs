@@ -171,7 +171,8 @@
                :value (tr "labels.export")
                :on-click accept-fn}]]]]
 
-          [:div "TODO: maquetar esto para cuando no hay selección"])]]]]))
+          [:div "TODO: maquetar esto para cuando no hay selección"
+           [:img {:src "images/export-no-shapes.png" :border "0" }]])]]]]))
 
 (mf/defc exports-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "page-id" "file-id"]))]}
