@@ -13,7 +13,8 @@
    [app.util.template :as tmpl]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
-   [pretty-spec.core :as ps]))
+   [pretty-spec.core :as ps]
+   [ring.response :as resp]))
 
 (defn get-spec-str
   [k]
@@ -47,8 +48,8 @@
   (let [context (prepare-context rpc)]
     (if (contains? cf/flags :backend-api-doc)
       (fn [_ respond _]
-        (respond {:status 200
-                  :body (-> (io/resource "api-doc.tmpl")
-                            (tmpl/render context))}))
+        (respond {::resp/status 200
+                  ::resp/body (-> (io/resource "api-doc.tmpl")
+                                  (tmpl/render context))}))
       (fn [_ respond _]
-        (respond {:status 404 :body ""})))))
+        (respond {::resp/status 404})))))

@@ -15,7 +15,8 @@
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [jsonista.core :as j]
-   [promesa.exec :as px]))
+   [promesa.exec :as px]
+   [ring.response :as resp]))
 
 (declare parse-json)
 (declare handle-request)
@@ -32,7 +33,7 @@
   (fn [request respond _]
     (let [data (slurp (:body request))]
       (px/run! executor #(handle-request cfg data))
-      (respond {:status 200 :body ""}))))
+      (respond {::resp/status 200}))))
 
 (defn handle-request
   [{:keys [http-client] :as cfg} data]

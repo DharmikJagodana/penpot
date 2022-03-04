@@ -20,6 +20,8 @@
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
+   [ring.request :as req]
+   [ring.response :as resp]
    [promesa.core :as p]
    [promesa.exec :as px]))
 
@@ -30,8 +32,8 @@
 (defn- handle-response-transformation
   [response request mdata]
   (if-let [transform-fn (:transform-response mdata)]
-    (transform-fn request response)
-    response))
+    (p/do (transform-fn request response))
+    (p/resolved response)))
 
 (defn- handle-before-comple-hook
   [response mdata]
@@ -45,25 +47,19 @@
   [methods {:keys [profile-id session-id] :as request} respond raise]
   (letfn [(handle-response [result]
             (let [mdata (meta result)]
-              (-> {:status 200 :body result}
+              (-> {::resp/status 200 ::resp/body result}
                   (handle-response-transformation request mdata))))]
 
     (let [type   (keyword (get-in request [:path-params :type]))
-          data   (merge (:params request)
-                        (:body-params request)
-                        (:uploads request)
-                        {::request request})
-
+          data   (into {::request request} (:params request))
           data   (if profile-id
                    (assoc data :profile-id profile-id ::session-id session-id)
                    (dissoc data :profile-id))
-
-          ;; Get the method from methods registry and if method does
-          ;; not exists asigns it to the default handler.
           method (get methods type default-handler)]
 
       (-> (method data)
-          (p/then #(respond (handle-response %)))
+          (p/then handle-response)
+          (p/then respond)
           (p/catch raise)))))
 
 (defn- rpc-mutation-handler
@@ -72,24 +68,20 @@
   [methods {:keys [profile-id session-id] :as request} respond raise]
   (letfn [(handle-response [result]
             (let [mdata (meta result)]
-              (-> {:status 200 :body result}
-                  (handle-response-transformation request mdata)
-                  (handle-before-comple-hook mdata))))]
+              (p/-> {::resp/status 200 ::resp/body result}
+                    (handle-response-transformation request mdata)
+                    (handle-before-comple-hook mdata))))]
 
     (let [type   (keyword (get-in request [:path-params :type]))
-          data   (merge (:params request)
-                        (:body-params request)
-                        (:uploads request)
-                        {::request request})
-
+          data   (into {::request request} (:params request))
           data   (if profile-id
                    (assoc data :profile-id profile-id ::session-id session-id)
                    (dissoc data :profile-id))
-
           method (get methods type default-handler)]
 
       (-> (method data)
-          (p/then #(respond (handle-response %)))
+          (p/then handle-response)
+          (p/then respond)
           (p/catch raise)))))
 
 (defn- wrap-metrics

@@ -18,7 +18,9 @@
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.core :as p]
-   [promesa.exec :as px]))
+   [promesa.exec :as px]
+   [ring.request :as req]
+   [ring.response :as resp]))
 
 (declare ^:private send-feedback)
 (declare ^:private handler)
@@ -42,9 +44,8 @@
 (defn- handler
   [{:keys [pool] :as cfg} {:keys [profile-id] :as request}]
   (let [ftoken (cf/get :feedback-token ::no-token)
-        token  (get-in request [:headers "x-feedback-token"])
-        params (d/merge (:params request)
-                        (:body-params request))]
+        token  (req/get-header req/get-header "x-feedback-token")
+        params (::req/params request)]
     (cond
       (uuid? profile-id)
       (let [profile (profile/retrieve-profile-data pool profile-id)
@@ -54,7 +55,7 @@
       (= token ftoken)
       (send-feedback cfg nil params))
 
-    {:status 204 :body ""}))
+    {::resp/status 204}))
 
 (s/def ::content ::us/string)
 (s/def ::from    ::us/email)

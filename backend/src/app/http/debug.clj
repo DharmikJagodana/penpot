@@ -25,7 +25,9 @@
    [fipp.edn :as fpp]
    [integrant.core :as ig]
    [promesa.core :as p]
-   [promesa.exec :as px]))
+   [promesa.exec :as px]
+   [ring.request :as req]
+   [ring.response :as resp]))
 
 ;; (selmer.parser/cache-off!)
 
@@ -42,10 +44,10 @@
     (ex/raise :type :authentication
               :code :only-admins-allowed))
 
-  {:status 200
-   :headers {"content-type" "text/html"}
-   :body (-> (io/resource "templates/debug.tmpl")
-             (tmpl/render {}))})
+  {::resp/status 200
+   ::resp/headers {"content-type" "text/html"}
+   ::resp/body (-> (io/resource "templates/debug.tmpl")
+                   (tmpl/render {}))})
 
 
 (def sql:retrieve-range-of-changes
@@ -61,13 +63,14 @@
               :code :enpty-data
               :hint "empty response"))
 
-  (cond-> {:status 200
-           :headers {"content-type" "application/transit+json"}
-           :body body}
+  (cond-> {::resp/status 200
+           ::resp/headers {"content-type" "application/transit+json"}
+           ::resp/body body}
     (contains? params :download)
-    (update :headers assoc "content-disposition" "attachment")))
+    (update ::resp/headers assoc "content-disposition" "attachment")))
 
-(defn retrieve-file-data
+
+(defn- retrieve-file-data
   [{:keys [pool]} {:keys [params] :as request}]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
@@ -84,10 +87,10 @@
                  (some-> (db/get-by-id pool :file file-id) :data))]
       (if (contains? params :download)
         (-> (prepare-response request data)
-            (update :headers assoc "content-type" "application/octet-stream"))
+            (update ::resp/headers assoc "content-type" "application/octet-stream"))
         (prepare-response request (some-> data blob/decode))))))
 
-(defn upload-file-data
+(defn- upload-file-data
   [{:keys [pool]} {:keys [profile-id params] :as request}]
   (let [project-id (some-> (profile/retrieve-additional-data pool profile-id) :default-project-id)
         data       (some-> params :file :tempfile fs/slurp-bytes blob/decode)]
@@ -99,10 +102,18 @@
                                    :project-id project-id
                                    :profile-id profile-id
                                    :data data})
-        {:status 200
-         :body "OK"})
-      {:status 500
-       :body "error"})))
+        {::resp/status 200
+         ::resp/body "OK"})
+      {::resp/status 500
+       ::resp/body "error"})))
+
+(defn file-data
+  [cfg request]
+  (case (req/method request)
+    :get (retrieve-file-data cfg request)
+    :post (upload-file-data cfg request)
+    (ex/raise :type :http
+              :code :method-not-found)))
 
 (defn retrieve-file-changes
   [{:keys [pool]} request]
@@ -175,12 +186,12 @@
                          (retrieve-report)
                          (render-template))]
       (if result
-        {:status 200
-         :headers {"content-type" "text/html; charset=utf-8"
-                   "x-robots-tag" "noindex"}
-         :body result}
-        {:status 404
-         :body "not found"}))))
+        {::resp/status 200
+         ::resp/headers {"content-type" "text/html; charset=utf-8"
+                         "x-robots-tag" "noindex"}
+         ::resp/body result}
+        {::resp/status 404
+         ::resp/body "not found"}))))
 
 (def sql:error-reports
   "select id, created_at from server_error_report order by created_at desc limit 100")
@@ -192,18 +203,18 @@
               :code :only-admins-allowed))
   (let [items (db/exec! pool [sql:error-reports])
         items (map #(update % :created-at dt/format-instant :rfc1123) items)]
-    {:status 200
-     :headers {"content-type" "text/html; charset=utf-8"
-               "x-robots-tag" "noindex"}
-     :body (-> (io/resource "templates/error-list.tmpl")
-               (tmpl/render {:items items}))}))
+    {::resp/status 200
+     ::resp/headers {"content-type" "text/html; charset=utf-8"
+                     "x-robots-tag" "noindex"}
+     ::resp/body (-> (io/resource "templates/error-list.tmpl")
+                     (tmpl/render {:items items}))}))
 
 (defn health-check
   "Mainly a task that performs a health check."
   [{:keys [pool]} _]
   (db/with-atomic [conn pool]
     (db/exec-one! conn ["select count(*) as count from server_prop;"])
-    {:status 200 :body "Ok"}))
+    {::resp/status 200 ::resp/body "Ok"}))
 
 (defn- wrap-async
   [{:keys [executor] :as cfg} f]
@@ -219,8 +230,7 @@
   [_ cfg]
   {:index (wrap-async cfg index)
    :health-check (wrap-async cfg health-check)
-   :retrieve-file-data (wrap-async cfg retrieve-file-data)
    :retrieve-file-changes (wrap-async cfg retrieve-file-changes)
    :retrieve-error (wrap-async cfg retrieve-error)
    :retrieve-error-list (wrap-async cfg retrieve-error-list)
-   :upload-file-data (wrap-async cfg upload-file-data)})
+   :file-data (wrap-async cfg file-data)})

@@ -22,7 +22,8 @@
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.core :as p]
-   [promesa.exec :as px]))
+   [promesa.exec :as px]
+   [ring.response :as resp]))
 
 (defn- build-redirect-uri
   [{:keys [provider] :as cfg}]
@@ -175,9 +176,8 @@
 
 (defn- redirect-response
   [uri]
-  {:status 302
-   :headers {"location" (str uri)}
-   :body ""})
+  {::resp/status 302
+   ::resp/headers {"location" (str uri)}})
 
 (defn- generate-error-redirect
   [cfg error]
@@ -233,7 +233,7 @@
                        :props props
                        :exp (dt/in-future "15m")})
         uri   (build-auth-uri cfg state)]
-    (respond {:status 200 :body {:redirect-uri uri}})))
+    (respond {::resp/status 200 ::resp/body {:redirect-uri uri}})))
 
 (defn- callback-handler
   [cfg request respond _]

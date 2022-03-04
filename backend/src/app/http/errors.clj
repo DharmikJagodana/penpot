@@ -11,13 +11,15 @@
    [app.common.logging :as l]
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [ring.request :as req]
+   [ring.response :as resp]))
 
 (defn- parse-client-ip
-  [{:keys [headers] :as request}]
-  (or (some-> (get headers "x-forwarded-for") (str/split ",") first)
-      (get headers "x-real-ip")
-      (get request :remote-addr)))
+  [request]
+  (or (some-> (req/get-header request "x-forwarded-for") (str/split ",") first)
+      (req/get-header request "x-real-ip")
+      (req/remote-addr request)))
 
 (defn get-error-context
   [request error]
@@ -49,20 +51,22 @@
 
 (defmethod handle-exception :authentication
   [err _]
-  {:status 401 :body (ex-data err)})
+  {::resp/status 401
+   ::resp/body (ex-data err)})
 
 (defmethod handle-exception :restriction
   [err _]
-  {:status 400 :body (ex-data err)})
+  {::resp/status 400
+   ::resp/body (ex-data err)})
 
 (defmethod handle-exception :validation
   [err _]
   (let [data    (ex-data err)
         explain (us/pretty-explain data)]
-    {:status 400
-     :body (-> data
-               (dissoc ::s/problems ::s/value)
-               (cond-> explain (assoc :explain explain)))}))
+    {::resp/status 400
+     ::resp/body (-> data
+                     (dissoc ::s/problems ::s/value)
+                     (cond-> explain (assoc :explain explain)))}))
 
 (defmethod handle-exception :assertion
   [error request]
@@ -72,16 +76,17 @@
              ::l/context (get-error-context request error)
              :cause error)
 
-    {:status 500
-     :body {:type :server-error
-            :code :assertion
-            :data (-> edata
-                      (dissoc ::s/problems ::s/value ::s/spec)
-                      (cond-> explain (assoc :explain explain)))}}))
+    {::resp/status 500
+     ::resp/body {:type :server-error
+                  :code :assertion
+                  :data (-> edata
+                            (dissoc ::s/problems ::s/value ::s/spec)
+                            (cond-> explain (assoc :explain explain)))}}))
 
 (defmethod handle-exception :not-found
   [err _]
-  {:status 404 :body (ex-data err)})
+  {::resp/status 404
+   ::resp/body (ex-data err)})
 
 (defmethod handle-exception :default
   [error request]
@@ -98,11 +103,11 @@
         (l/error ::l/raw (ex-message error)
                  ::l/context (get-error-context request error)
                  :cause error)
-        {:status 500
-         :body {:type :server-error
-                :code :unexpected
-                :hint (ex-message error)
-                :data edata}}))))
+        {::resp/status 500
+         ::resp/body {:type :server-error
+                      :code :unexpected
+                      :hint (ex-message error)
+                      :data edata}}))))
 
 (defmethod handle-exception org.postgresql.util.PSQLException
   [error request]
@@ -112,23 +117,23 @@
              :cause error)
     (cond
       (= state "57014")
-      {:status 504
-       :body {:type :server-timeout
-              :code :statement-timeout
-              :hint (ex-message error)}}
+      {::resp/status 504
+       ::resp/body {:type :server-timeout
+                    :code :statement-timeout
+                    :hint (ex-message error)}}
 
       (= state "25P03")
-      {:status 504
-       :body {:type :server-timeout
-              :code :idle-in-transaction-timeout
-              :hint (ex-message error)}}
+      {::resp/status 504
+       ::resp/body {:type :server-timeout
+                    :code :idle-in-transaction-timeout
+                    :hint (ex-message error)}}
 
       :else
-      {:status 500
-       :body {:type :server-error
-              :code :psql-exception
-              :hint (ex-message error)
-              :state state}})))
+      {::resp/status 500
+       ::resp/body {:type :server-error
+                    :code :psql-exception
+                    :hint (ex-message error)
+                    :state state}})))
 
 (defn handle
   [error req]
