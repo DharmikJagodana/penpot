@@ -75,7 +75,15 @@
   {::mf/register modal/components
    ::mf/register-as :export-shapes}
   [{:keys [shapes]}]
-  (let [exports (mf/use-state (mapv (fn [shape] (assoc shape :exports (mapv #(assoc % :enabled true) (:exports shape)))) shapes))
+  (let [selected (wsh/lookup-selected @st/state)
+        shapes (if (some? shapes)
+                 shapes
+                 (if (> (count selected) 0)
+                   (deref (refs/objects-by-id selected))
+                   (->> (wsh/lookup-page-objects @st/state)
+                        vals
+                        (filter #(> (count (:exports %)) 0)))))
+        exports (mf/use-state (mapv (fn [shape] (assoc shape :exports (mapv #(assoc % :enabled true) (:exports shape)))) shapes))
         checked (->> (map :exports @exports)
                      (flatten)
                      (filter #(get % :enabled)))

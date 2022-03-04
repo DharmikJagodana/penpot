@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.shortcuts
   (:require
+   [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
@@ -54,6 +55,12 @@
    :toggle-rules      {:tooltip (ds/meta-shift "R")
                        :command (ds/c-mod "shift+r")
                        :fn #(st/emit! (dw/toggle-layout-flags :rules))}
+
+   :export-shapes     {:tooltip (ds/meta-shift "E")
+                       :command (ds/c-mod "shift+e")
+                       :fn #(st/emit!
+                             (modal/show
+                              {:type :export-shapes}))}
 
    :select-all        {:tooltip (ds/meta "A")
                        :command (ds/c-mod "a")

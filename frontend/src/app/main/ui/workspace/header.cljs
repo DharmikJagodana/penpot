@@ -150,6 +150,14 @@
                              (dom/prevent-default event)
                              (reset! editing? true))
 
+        on-export-shapes
+        (mf/use-callback
+         (fn [_]
+           (let []
+             (st/emit!
+              (modal/show
+               {:type :export-shapes})))))
+
         on-export-file
         (mf/use-callback
          (mf/deps file team-id)
@@ -263,6 +271,9 @@
           [:span (tr "dashboard.remove-shared")]]
          [:li {:on-click on-add-shared}
           [:span (tr "dashboard.add-shared")]])
+       [:li.export-file {:on-click on-export-shapes}
+        [:span (tr "dashboard.export-TODO")]
+        [:span.shortcut (sc/get-tooltip :export-shapes)]]
        [:li.export-file {:on-click on-export-file}
         [:span (tr "dashboard.export-single")]]
        (when (seq frames)
