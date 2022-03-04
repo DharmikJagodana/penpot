@@ -123,8 +123,6 @@
 
       [:*
        [:div.modal-content
-        #_[:p.explain (tr "dashboard.export.explain")]
-        #_[:p.detail (tr "dashboard.export.detail")]
         [:div.input-checkbox
          [:input {:type "checkbox"
                   :id (str "export-all")
