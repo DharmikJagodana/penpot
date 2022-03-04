@@ -124,28 +124,29 @@
        [:div.modal-close-button
         {:on-click cancel-fn} i/close]]
 
-      [:div.export-option.table-row.header
-       [:div.table-field.check {:on-click change-all}
-        (cond
-          all-checked? [:span i/checkbox-checked]
-          all-unchecked? [:span i/checkbox-unchecked]
-          :else [:span i/checkbox-intermediate])]
-       [:div.table-field.title (tr "dashboard.export-shapes.selected" (c (count checked)) (c (count all)))]]
-
       [:*
        [:div.modal-content
-        (for [[shape-index shape] (d/enumerate shapes)]
-          (for [[export-index export] (d/enumerate (:exports shape))]
-            [:div.export-option.table-row
-             [:div.table-field.check {:on-click #(on-change-handler % shape-index export-index)}
-              (if (get-in @exports [shape-index :exports export-index :enabled])
-                [:span i/checkbox-checked]
-                [:span i/checkbox-unchecked])]
+        [:div.export-option.table-row.header
+         [:div.table-field.check {:on-click change-all}
+          (cond
+            all-checked? [:span i/checkbox-checked]
+            all-unchecked? [:span i/checkbox-unchecked]
+            :else [:span i/checkbox-intermediate])]
+         [:div.table-field.title (tr "dashboard.export-shapes.selected" (c (count checked)) (c (count all)))]]
 
-             [:div.table-field.name (str (cond-> (:name shape)
-                                           (:suffix export) (str (:suffix export))))]
-             [:div.table-field.scale (str (* (:width shape) (:scale export)) "x" (* (:height shape) (:scale export)) "px ")]
-             [:div.table-field.extension (-> (name (:type export)) clojure.string/upper-case)]]))]
+        [:div.body
+         (for [[shape-index shape] (d/enumerate shapes)]
+           (for [[export-index export] (d/enumerate (:exports shape))]
+             [:div.export-option.table-row.body
+              [:div.table-field.check {:on-click #(on-change-handler % shape-index export-index)}
+               (if (get-in @exports [shape-index :exports export-index :enabled])
+                 [:span i/checkbox-checked]
+                 [:span i/checkbox-unchecked])]
+
+              [:div.table-field.name (str (cond-> (:name shape)
+                                            (:suffix export) (str (:suffix export))))]
+              [:div.table-field.scale (str (* (:width shape) (:scale export)) "x" (* (:height shape) (:scale export)) "px ")]
+              [:div.table-field.extension (-> (name (:type export)) clojure.string/upper-case)]]))]]
 
        [:div.modal-footer
         [:div.action-buttons
