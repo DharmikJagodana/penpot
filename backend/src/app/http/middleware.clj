@@ -105,7 +105,7 @@
       (proxy-super flush)
       (proxy-super close))))
 
-(def ^:const buffer-size (:http/output-buffer-size yt/base-defaults))
+(def ^:const buffer-size (:xnio/buffer-size yt/base-defaults))
 
 (defn wrap-format-response
   [handler]
@@ -113,15 +113,13 @@
             (reify resp/StreamableResponseBody
               (-write-body-to-stream [_ _ output-stream]
                 (try
-                  #_(with-open [bos (buffered-output-stream output-stream buffer-size)]
+                  (with-open [bos (buffered-output-stream output-stream buffer-size)]
                     (let [tw (t/writer bos opts)]
                       (t/write! tw data)))
-                  (t/write! (t/writer output-stream opts) data)
 
-
-                  ;; (catch java.io.IOException _cause
-                  ;;   ;; Do nothing, EOF means client closes connection abruptly
-                  ;;   nil)
+                  (catch java.io.IOException _cause
+                    ;; Do nothing, EOF means client closes connection abruptly
+                    nil)
                   (catch Throwable cause
                     (l/warn :hint "unexpected error on encoding response"
                             :cause cause))
